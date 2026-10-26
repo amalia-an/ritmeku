@@ -113,11 +113,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 .chip.terbatas { color: var(--ph-luteal); border-color: var(--ph-luteal); }
 .chip.umum { color: var(--ph-folikular); border-color: var(--ph-folikular); }
 .chip.belum { color: var(--muted); border-color: var(--muted); border-style: dashed; }
-.legend { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 0.82rem; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+.legend { margin-bottom: 14px; padding: 10px 12px; background: var(--tint); border-radius: 10px; font-size: 0.82rem; color: var(--ink); display: flex; flex-direction: column; gap: 6px; }
+.legend .chip { margin-left: 0; margin-right: 4px; }
+.legend-h { font-weight: 700; font-size: 0.78rem; color: var(--muted); }
 @media (max-width: 380px) { .rec-item { grid-template-columns: 1fr; gap: 2px; } }
 
 /* Trial */
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+.empty { margin: 0; background: var(--bg); border: 1px dashed var(--line); border-radius: 10px; padding: 14px; color: var(--muted); font-size: 0.9rem; text-align: center; }
 .stat { background: var(--bg); border-radius: 10px; padding: 10px; }
 .stat .big { font-family: var(--font-data); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
 .stat .cap { font-size: 0.75rem; color: var(--muted); line-height: 1.3; }
@@ -144,6 +147,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px
 input[type="date"], input[type="time"] { font: inherit; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--bg); color: var(--ink); max-width: 100%; }
 .pair { display: flex; gap: 10px; flex-wrap: wrap; }
 .pair .field { flex: 1 1 130px; margin-top: 0; }
+.notice { background: var(--warn-bg); color: var(--warn-ink); border-radius: 12px; padding: 10px 14px; font-size: 0.88rem; line-height: 1.45; }
 .err { color: var(--ph-menstruasi); font-size: 0.85rem; margin-top: 8px; }
 details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; }
 details summary { cursor: pointer; font-weight: 600; }
@@ -164,6 +168,8 @@ footer { font-size: 0.8rem; color: var(--muted); text-align: center; }
     <h1 class="brand">Ritmeku</h1>
     <span class="today" id="todayLabel"></span>
   </header>
+
+  <div class="notice" role="note"><strong>Catatan hanya tersimpan di browser HP ini.</strong> Data akan hilang jika kamu menghapus riwayat atau data browser, memakai mode penyamaran, atau berganti HP/browser. Selalu buka Ritmeku dari browser yang sama.</div>
 
   <div id="vLoading" class="card state muted">Memuat catatanmu…</div>
 
@@ -213,9 +219,9 @@ footer { font-size: 0.8rem; color: var(--muted); text-align: center; }
         </div>
       </div>
       <div class="q">
-        <span class="q-label" id="qF">Makan hari ini</span>
+        <span class="q-label" id="qF">Hari ini berpuasa?</span>
         <div class="seg two" role="group" aria-labelledby="qF" id="segFast">
-          <button type="button" data-v="puasa">Puasa sesuai jadwal</button><button type="button" data-v="tidak">Tidak puasa</button>
+          <button type="button" data-v="puasa">Ya</button><button type="button" data-v="tidak">Tidak</button>
         </div>
       </div>
       <div class="inline-ask" id="askStart" hidden>
@@ -227,13 +233,15 @@ footer { font-size: 0.8rem; color: var(--muted); text-align: center; }
 
     <section class="card" aria-labelledby="recH">
       <h2 id="recH">Rekomendasi hari ini</h2>
+      <div class="legend" aria-label="Arti label bukti">
+        <span class="legend-h">Arti label di setiap saran</span>
+        <span><span class="chip umum">Umum</span> Panduan kesehatan umum yang berlaku untuk siapa saja, bukan khusus fase siklus.</span>
+        <span><span class="chip terbatas">Terbatas</span> Ada penelitian, tetapi jumlahnya sedikit atau hasilnya belum konsisten.</span>
+        <span><span class="chip belum">Belum ada bukti</span> Belum ada penelitian untuk fase ini. Ikuti kebiasaanmu sendiri.</span>
+      </div>
       <div class="lowbanner" id="lowBanner" hidden>Energimu rendah, jadi rekomendasi diturunkan satu tingkat.</div>
       <div class="rec" id="rec"></div>
-      <div class="legend">
-        <span><span class="chip terbatas">Terbatas</span> ada studi, tetapi kecil atau hasilnya belum konsisten</span>
-        <span><span class="chip umum">Umum</span> panduan kesehatan umum, tidak khusus untuk fase siklus</span>
-        <span><span class="chip belum">Belum ada bukti</span> belum ada penelitian untuk saran khusus fase ini</span>
-      </div>
+
     </section>
 
     <section class="card weekq" id="weekCard" hidden aria-labelledby="weekH">
@@ -247,10 +255,12 @@ footer { font-size: 0.8rem; color: var(--muted); text-align: center; }
 
     <section class="card" aria-labelledby="trialH">
       <h2 id="trialH">Trial satu siklus</h2>
-      <div class="stats">
+      <p class="empty" id="stEmpty" hidden>Belum ada data. Catat minimal 3 hari untuk melihat rata-rata.</p>
+      <div class="stats" id="stats">
         <div class="stat"><div class="big" id="stLogged"></div><div class="cap">hari tercatat dari 28</div></div>
         <div class="stat" id="stMissBox"><div class="big" id="stMissed"></div><div class="cap">hari terlewat (batas 4)</div></div>
-        <div class="stat"><div class="big" id="stWeeks"></div><div class="cap">minggu rekomendasi sesuai (target 3 dari 4)</div></div>
+        <div class="stat"><div class="big" id="stAvgE"></div><div class="cap">rata-rata energi (skala 1–5)</div></div>
+        <div class="stat"><div class="big" id="stWeeks"></div><div class="cap" id="stWeeksCap">minggu rekomendasi sesuai (target 3 dari 4)</div></div>
       </div>
       <div class="bar"><div id="stBar"></div></div>
       <p class="small muted" id="stNote" style="margin:8px 0 0"></p>
@@ -291,7 +301,7 @@ footer { font-size: 0.8rem; color: var(--muted); text-align: center; }
     </details>
   </div>
 
-  <footer>Catatanmu hanya tersimpan di browser perangkat ini dan tidak dikirim ke mana pun. Menghapus data browser akan menghapus catatan.<br>Ritmeku bukan pengganti dokter. Tidak ada target kalori atau berat badan.</footer>
+  <footer>Catatanmu tidak dikirim ke mana pun.<br>Ritmeku bukan pengganti dokter. Tidak ada target kalori atau berat badan.</footer>
 </div>
 
 <script>
@@ -351,6 +361,11 @@ footer { font-size: 0.8rem; color: var(--muted); text-align: center; }
     "Intensitas sedang: jogging ringan, renang, atau latihan daya tahan 30–45 menit.",
     "Latihan kekuatan atau interval.",
   ];
+  const CHIP_INFO = {
+    umum: "Panduan kesehatan umum, bukan khusus fase siklus",
+    terbatas: "Ada penelitian, tetapi sedikit atau belum konsisten",
+    belum: "Belum ada penelitian untuk fase ini",
+  };
   const CHIP = { terbatas: "Terbatas", umum: "Umum", belum: "Belum ada bukti" };
 
   // ---------- State ----------
@@ -390,7 +405,7 @@ footer { font-size: 0.8rem; color: var(--muted); text-align: center; }
   function isLogged(d) { return !!(days[d] && days[d].energy); }
 
   // ---------- Rendering ----------
-  function chip(lbl) { return '<span class="chip ' + lbl + '">' + CHIP[lbl] + "</span>"; }
+  function chip(lbl) { return '<span class="chip ' + lbl + '" title="' + CHIP_INFO[lbl] + '">' + CHIP[lbl] + "</span>"; }
   function lines(arr) { return arr.map(([t, l]) => "<p>" + esc(t) + " " + chip(l) + "</p>").join(""); }
   function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
@@ -471,12 +486,15 @@ footer { font-size: 0.8rem; color: var(--muted); text-align: center; }
     const t = today();
     const start = profile.trialStart || t;
     const elapsed = Math.min(28, Math.max(1, diff(t, start) + 1));
-    let logged = 0, missed = 0;
+    let logged = 0, missed = 0, eSum = 0;
     for (let i = 0; i < 28; i++) {
       const d = addDays(start, i);
-      if (isLogged(d)) logged++;
+      if (isLogged(d)) { logged++; eSum += Number(days[d].energy); }
       else if (d < t) missed++;
     }
+    $("stEmpty").hidden = logged >= 3;
+    $("stats").hidden = logged < 3;
+    $("stAvgE").textContent = logged ? (eSum / logged).toFixed(1).replace(".", ",") : "";
     $("stLogged").textContent = logged;
     $("stMissed").textContent = missed;
     $("stMissBox").classList.toggle("warn", missed > 4);
@@ -488,9 +506,10 @@ footer { font-size: 0.8rem; color: var(--muted); text-align: center; }
       if (a) { answered++; if (a.fit) fit++; }
       else if (w <= done && !pending) pending = w;
     }
-    $("stWeeks").textContent = fit + "/" + answered;
+    $("stWeeks").textContent = answered ? fit + "/" + answered : "–";
+    $("stWeeksCap").textContent = answered ? "minggu rekomendasi sesuai (target 3 dari 4)" : "belum ada cek mingguan; muncul setelah 7 hari";
     const finished = diff(t, start) >= 28;
-    let note = "Trial dimulai " + human(start) + ". Hari ke-" + elapsed + " dari 28.";
+    let note = "Trial dimulai " + human(start) + ". Hari ke-" + elapsed + " dari 28, " + logged + " hari tercatat.";
     if (finished) note = "Trial 28 hari selesai (" + human(start) + " – " + human(addDays(start, 27)) + "). " +
       (missed > 4 ? "Lebih dari 4 hari terlewat: input mungkin perlu dibuat lebih singkat." : "Kebiasaan mencatat tercapai.") + " " +
       (answered >= 4 ? (fit >= 3 ? "Rekomendasi sesuai di " + fit + " dari 4 minggu." : "Rekomendasi sesuai kurang dari 3 dari 4 minggu: rekomendasi per fase perlu diubah.") : "");
