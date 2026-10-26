@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Ritmeku</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: one narrow phone column; phase card on top, then today's log, the recommendation, and trial tracking */
+:root {
+  --bg: #f8f6f8;
+  --surface: #ffffff;
+  --ink: #241b22;
+  --muted: #6e6270;
+  --line: #e6dfe6;
+  --accent: #7a2e5c;
+  --accent-ink: #ffffff;
+  --ph-menstruasi: #b8325a;
+  --ph-folikular: #3f8a5c;
+  --ph-ovulasi: #a87108;
+  --on-phase: #ffffff;
+  --ph-luteal: #5a55a8;
+  --ph-none: #d9d2da;
+  --tint: #f2e9f0;
+  --warn-bg: #fdf1dc;
+  --warn-ink: #7a4b00;
+  --ok: #2f7a4d;
+  --font-display: "Young Serif", Georgia, serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17121a; --surface: #211a24; --ink: #f1e9f0; --muted: #a99cab; --line: #382e3b;
+    --accent: #e48bbd; --accent-ink: #2a0f1f;
+    --ph-menstruasi: #f0708f; --ph-folikular: #6cc28c; --ph-ovulasi: #e8b54a; --ph-luteal: #9a95ec; --ph-none: #3e3441; --on-phase: #1a1018;
+    --tint: #2c2230; --warn-bg: #3a2c12; --warn-ink: #f3cf8a; --ok: #6cc28c;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17121a; --surface: #211a24; --ink: #f1e9f0; --muted: #a99cab; --line: #382e3b;
+  --accent: #e48bbd; --accent-ink: #2a0f1f;
+  --ph-menstruasi: #f0708f; --ph-folikular: #6cc28c; --ph-ovulasi: #e8b54a; --ph-luteal: #9a95ec; --ph-none: #3e3441; --on-phase: #1a1018;
+  --tint: #2c2230; --warn-bg: #3a2c12; --warn-ink: #f3cf8a; --ok: #6cc28c;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+}
+.wrap {
+  max-width: 520px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+header.top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.brand { font-family: var(--font-display); font-size: 1.6rem; margin: 0; letter-spacing: -0.01em; }
+.today { color: var(--muted); font-size: 0.9rem; }
+h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.09em; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+.muted { color: var(--muted); }
+.small { font-size: 0.85rem; }
+.num { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+
+/* Phase */
+.phase { background: var(--phase-c, var(--accent)); color: var(--on-phase); border: 0; }
+.phase .label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.85; font-weight: 600; }
+.phase .name { font-family: var(--font-display); font-size: 2.1rem; line-height: 1.1; margin: 4px 0 6px; text-wrap: balance; }
+.phase .meta { opacity: 0.92; font-size: 0.92rem; }
+.phase .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.phase .btn-ghost { background: transparent; color: var(--on-phase); border-color: var(--on-phase); }
+.late { margin-top: 8px; font-size: 0.88rem; background: rgba(0,0,0,0.16); padding: 6px 10px; border-radius: 8px; }
+
+/* Buttons */
+button { font: inherit; cursor: pointer; }
+.btn { border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 8px 14px; border-radius: 999px; font-weight: 600; font-size: 0.9rem; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn-ghost { background: transparent; }
+button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Daily log */
+.q { display: flex; flex-direction: column; gap: 6px; }
+.q + .q { margin-top: 14px; }
+.q-label { font-weight: 600; font-size: 0.92rem; }
+.seg { display: grid; gap: 6px; }
+.seg.five { grid-template-columns: repeat(5, 1fr); }
+.seg.two { grid-template-columns: repeat(2, 1fr); }
+.seg button {
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  border-radius: 10px; padding: 10px 4px; font-weight: 600; min-height: 46px;
+}
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.seg.five button { font-family: var(--font-data); font-size: 1.05rem; }
+.scale { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); }
+.saved { margin-top: 12px; font-size: 0.85rem; color: var(--muted); min-height: 1.3em; }
+.saved.ok { color: var(--ok); }
+.inline-ask { margin-top: 10px; background: var(--tint); border-radius: 10px; padding: 10px 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+
+/* Recommendation */
+.lowbanner { background: var(--warn-bg); color: var(--warn-ink); border-radius: 10px; padding: 8px 12px; font-size: 0.88rem; margin-bottom: 12px; }
+.rec { display: flex; flex-direction: column; gap: 14px; }
+.rec-item { display: grid; grid-template-columns: 92px 1fr; gap: 10px; }
+.rec-item .k { font-weight: 700; font-size: 0.85rem; padding-top: 2px; }
+.rec-item .v { min-width: 0; }
+.rec-item p { margin: 0 0 4px; }
+.chip { display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; border-radius: 6px; padding: 1px 7px; margin-left: 4px; white-space: nowrap; vertical-align: 1px; border: 1px solid; }
+.chip.terbatas { color: var(--ph-luteal); border-color: var(--ph-luteal); }
+.chip.umum { color: var(--ph-folikular); border-color: var(--ph-folikular); }
+.chip.belum { color: var(--muted); border-color: var(--muted); border-style: dashed; }
+.legend { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 0.82rem; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+@media (max-width: 380px) { .rec-item { grid-template-columns: 1fr; gap: 2px; } }
+
+/* Trial */
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--bg); border-radius: 10px; padding: 10px; }
+.stat .big { font-family: var(--font-data); font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.stat .cap { font-size: 0.75rem; color: var(--muted); line-height: 1.3; }
+.stat.warn .big { color: var(--warn-ink); }
+.bar { height: 6px; background: var(--line); border-radius: 99px; margin-top: 12px; overflow: hidden; }
+.bar > div { height: 100%; background: var(--accent); }
+
+.strip { display: grid; grid-template-columns: repeat(14, 1fr); gap: 4px; margin-top: 14px; }
+.cell { aspect-ratio: 1; max-width: 100%; border-radius: 5px; background: var(--ph-none); position: relative; display: grid; place-items: center; font-size: 0.6rem; font-family: var(--font-data); color: #fff; }
+.cell.future { opacity: 0.4; }
+.cell.today { outline: 2px solid var(--ink); outline-offset: 1px; }
+.cell .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--on-phase); }
+.keys { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 0.78rem; color: var(--muted); }
+.keys span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 3px; background: var(--c); margin-right: 5px; vertical-align: -1px; }
+
+.weekq textarea { width: 100%; margin-top: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--bg); color: var(--ink); font: inherit; resize: vertical; min-height: 56px; }
+.weekq .seg { margin-top: 10px; }
+
+/* Forms */
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field + .field { margin-top: 12px; }
+.field label { font-weight: 600; font-size: 0.9rem; }
+.field .hint { font-size: 0.8rem; color: var(--muted); }
+input[type="date"], input[type="time"] { font: inherit; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--bg); color: var(--ink); max-width: 100%; }
+.pair { display: flex; gap: 10px; flex-wrap: wrap; }
+.pair .field { flex: 1 1 130px; margin-top: 0; }
+.err { color: var(--ph-menstruasi); font-size: 0.85rem; margin-top: 8px; }
+details { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 16px; }
+details summary { cursor: pointer; font-weight: 600; }
+details[open] summary { margin-bottom: 12px; }
+.plist { list-style: none; padding: 0; margin: 0 0 12px; display: flex; flex-direction: column; gap: 6px; }
+.plist li { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.linkbtn { background: none; border: 0; color: var(--accent); font-weight: 600; padding: 2px 4px; }
+.sources { font-size: 0.82rem; color: var(--muted); padding-left: 18px; margin: 8px 0 0; }
+.sources li + li { margin-top: 4px; }
+footer { font-size: 0.8rem; color: var(--muted); text-align: center; }
+.state { text-align: center; padding: 32px 16px; }
+@media (prefers-reduced-motion: no-preference) { .seg button, .btn { transition: background-color .15s, color .15s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1 class="brand">Ritmeku</h1>
+    <span class="today" id="todayLabel"></span>
+  </header>
+
+  <div id="vLoading" class="card state muted">Memuat catatanmu…</div>
+
+  <div id="vOff" class="card state" hidden>
+    <p><strong>Catatan belum bisa disimpan di browser ini.</strong></p>
+    <p class="muted small">Ritmeku menyimpan catatan di browser HP-mu. Matikan mode penyamaran (incognito) atau izinkan penyimpanan situs, lalu buka ulang halaman ini.</p>
+  </div>
+
+  <!-- First-time setup -->
+  <form id="vSetup" class="card" hidden novalidate>
+    <h2>Mulai di sini</h2>
+    <p class="small muted" style="margin-top:0">Isi hari pertama haid untuk tiga siklus terakhir. Ritmeku menghitung rata-rata panjang siklusmu dari tanggal ini. Jika hanya ingat satu, isi yang pertama saja; panjang siklus dianggap 28 hari.</p>
+    <div class="field"><label for="p1">Hari pertama haid terakhir</label><input type="date" id="p1" required></div>
+    <div class="field"><label for="p2">Hari pertama haid sebelumnya</label><input type="date" id="p2"></div>
+    <div class="field"><label for="p3">Hari pertama haid dua siklus lalu</label><input type="date" id="p3"></div>
+    <div class="pair" style="margin-top:12px">
+      <div class="field"><label for="w1">Jendela makan buka</label><input type="time" id="w1" value="12:00"></div>
+      <div class="field"><label for="w2">Jendela makan tutup</label><input type="time" id="w2" value="20:00"></div>
+    </div>
+    <p class="err" id="setupErr" hidden></p>
+    <div style="margin-top:16px"><button class="btn btn-primary" type="submit">Simpan dan mulai</button></div>
+  </form>
+
+  <div id="vApp" hidden style="display:contents">
+    <section class="card phase" id="phaseCard" aria-live="polite">
+      <div class="label">Fase hari ini</div>
+      <div class="name" id="phName"></div>
+      <div class="meta" id="phMeta"></div>
+      <div class="meta" id="fastLine" style="margin-top:4px"></div>
+      <div class="late" id="phLate" hidden></div>
+      <div class="row"><button class="btn btn-ghost" id="startPeriodBtn" type="button">Haid mulai hari ini</button></div>
+    </section>
+
+    <section class="card" aria-labelledby="logH">
+      <h2 id="logH">Catatan hari ini</h2>
+      <div class="q">
+        <span class="q-label" id="qE">Energi</span>
+        <div class="seg five" role="group" aria-labelledby="qE" id="segEnergy">
+          <button type="button" data-v="1">1</button><button type="button" data-v="2">2</button><button type="button" data-v="3">3</button><button type="button" data-v="4">4</button><button type="button" data-v="5">5</button>
+        </div>
+        <div class="scale"><span>sangat lelah</span><span>sangat bertenaga</span></div>
+      </div>
+      <div class="q">
+        <span class="q-label" id="qH">Sedang haid?</span>
+        <div class="seg two" role="group" aria-labelledby="qH" id="segPeriod">
+          <button type="button" data-v="ya">Ya</button><button type="button" data-v="tidak">Tidak</button>
+        </div>
+      </div>
+      <div class="q">
+        <span class="q-label" id="qF">Makan hari ini</span>
+        <div class="seg two" role="group" aria-labelledby="qF" id="segFast">
+          <button type="button" data-v="puasa">Puasa sesuai jadwal</button><button type="button" data-v="tidak">Tidak puasa</button>
+        </div>
+      </div>
+      <div class="inline-ask" id="askStart" hidden>
+        <span class="small">Tandai hari ini sebagai hari pertama haid?</span>
+        <button class="btn btn-primary" type="button" id="askStartYes">Ya, haid mulai</button>
+      </div>
+      <div class="saved" id="savedMsg" aria-live="polite"></div>
+    </section>
+
+    <section class="card" aria-labelledby="recH">
+      <h2 id="recH">Rekomendasi hari ini</h2>
+      <div class="lowbanner" id="lowBanner" hidden>Energimu rendah, jadi rekomendasi diturunkan satu tingkat.</div>
+      <div class="rec" id="rec"></div>
+      <div class="legend">
+        <span><span class="chip terbatas">Terbatas</span> ada studi, tetapi kecil atau hasilnya belum konsisten</span>
+        <span><span class="chip umum">Umum</span> panduan kesehatan umum, tidak khusus untuk fase siklus</span>
+        <span><span class="chip belum">Belum ada bukti</span> belum ada penelitian untuk saran khusus fase ini</span>
+      </div>
+    </section>
+
+    <section class="card weekq" id="weekCard" hidden aria-labelledby="weekH">
+      <h2 id="weekH">Cek mingguan</h2>
+      <p style="margin:0" id="weekQ"></p>
+      <textarea id="weekNote" placeholder="Opsional: bagian mana yang tidak sesuai atau membingungkan?"></textarea>
+      <div class="seg two">
+        <button type="button" id="weekYes">Ya, sesuai</button><button type="button" id="weekNo">Tidak sesuai</button>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="trialH">
+      <h2 id="trialH">Trial satu siklus</h2>
+      <div class="stats">
+        <div class="stat"><div class="big" id="stLogged"></div><div class="cap">hari tercatat dari 28</div></div>
+        <div class="stat" id="stMissBox"><div class="big" id="stMissed"></div><div class="cap">hari terlewat (batas 4)</div></div>
+        <div class="stat"><div class="big" id="stWeeks"></div><div class="cap">minggu rekomendasi sesuai (target 3 dari 4)</div></div>
+      </div>
+      <div class="bar"><div id="stBar"></div></div>
+      <p class="small muted" id="stNote" style="margin:8px 0 0"></p>
+      <div class="strip" id="strip" aria-label="Fase 21 hari terakhir dan 7 hari ke depan"></div>
+      <div class="keys">
+        <span style="--c:var(--ph-menstruasi)">Menstruasi</span>
+        <span style="--c:var(--ph-folikular)">Folikular</span>
+        <span style="--c:var(--ph-ovulasi)">Ovulasi</span>
+        <span style="--c:var(--ph-luteal)">Luteal</span>
+        <span class="muted">• = tercatat · pudar = perkiraan</span>
+      </div>
+    </section>
+
+    <details id="settings">
+      <summary>Pengaturan siklus dan jadwal puasa</summary>
+      <p class="small muted" style="margin-top:0">Rata-rata siklus: <strong class="num" id="setAvg"></strong>, dihitung dari tanggal haid di bawah.</p>
+      <ul class="plist" id="plist"></ul>
+      <div class="pair">
+        <div class="field"><label for="addP">Tambah hari pertama haid</label><input type="date" id="addP"></div>
+      </div>
+      <div style="margin-top:8px"><button class="btn" type="button" id="addPBtn">Tambah tanggal</button></div>
+      <div class="pair" style="margin-top:16px">
+        <div class="field"><label for="sw1">Jendela makan buka</label><input type="time" id="sw1"></div>
+        <div class="field"><label for="sw2">Jendela makan tutup</label><input type="time" id="sw2"></div>
+      </div>
+      <div style="margin-top:8px"><button class="btn" type="button" id="saveWinBtn">Simpan jadwal</button></div>
+      <p class="small" id="setMsg" aria-live="polite"></p>
+    </details>
+
+    <details>
+      <summary>Sumber bukti</summary>
+      <ul class="sources">
+        <li>Meignié et al. (2021). Frontiers in Physiology. DOI 10.3389/fphys.2021.654585</li>
+        <li>Gorczyca et al. (2016). European Journal of Nutrition. PMID 26043860</li>
+        <li>Cienfuegos et al. (2022). Nutrients. DOI 10.3390/nu14112343</li>
+      </ul>
+      <p class="small muted">Belum didukung bukti: jenis puasa tertentu yang optimal per fase, pola makan per fase yang mengubah performa atau berat badan, dan program latihan yang dipersonalisasi per fase.</p>
+    </details>
+  </div>
+
+  <footer>Catatanmu hanya tersimpan di browser perangkat ini dan tidak dikirim ke mana pun. Menghapus data browser akan menghapus catatan.<br>Ritmeku bukan pengganti dokter. Tidak ada target kalori atau berat badan.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const pad = (n) => String(n).padStart(2, "0");
+  const fmt = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+  const utc = (s) => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d); };
+  const diff = (a, b) => Math.round((utc(a) - utc(b)) / 864e5);
+  const addDays = (s, n) => { const t = new Date(utc(s) + n * 864e5); return t.getUTCFullYear() + "-" + pad(t.getUTCMonth() + 1) + "-" + pad(t.getUTCDate()); };
+  const BULAN = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+  const HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+  const human = (s) => { const [y, m, d] = s.split("-").map(Number); return d + " " + BULAN[m - 1] + " " + y; };
+  const today = () => fmt(new Date());
+
+  const PHASES = {
+    menstruasi: { name: "Menstruasi", color: "--ph-menstruasi" },
+    folikular: { name: "Folikular", color: "--ph-folikular" },
+    ovulasi: { name: "Ovulasi", color: "--ph-ovulasi" },
+    luteal: { name: "Luteal", color: "--ph-luteal" },
+  };
+
+  // Knowledge base. Exercise level: 0 rest, 1 light, 2 moderate, 3 strength/interval.
+  const KB = {
+    menstruasi: {
+      level: 1,
+      ex: [["Olahraga intensitas ringan sampai sedang, misalnya jalan cepat atau yoga.", "umum"],
+           ["Impulsivitas dilaporkan lebih tinggi di fase ini. Pilih latihan yang terkontrol.", "terbatas"]],
+      food: [["Perbanyak sumber zat besi dan vitamin C, dan cukupi cairan.", "umum"]],
+      fast: [["Tidak ada bukti spesifik untuk fase ini. Jendela makan boleh lebih longgar.", "umum"]],
+    },
+    folikular: {
+      level: 3,
+      ex: [["Cocok untuk latihan kekuatan atau interval.", "terbatas"]],
+      food: [["Karbohidrat kompleks dan protein untuk pemulihan setelah latihan.", "umum"]],
+      fast: [["Ikuti jadwal biasa. Belum ada bukti jendela puasa khusus untuk fase ini.", "belum"]],
+    },
+    ovulasi: {
+      level: 3,
+      ex: [["Motivasi berlatih dilaporkan lebih tinggi. Cocok untuk sesi yang menantang.", "terbatas"],
+           ["Lakukan pemanasan. Cedera ACL dilaporkan lebih sering di sekitar menstruasi.", "terbatas"]],
+      food: [["Jaga hidrasi.", "umum"]],
+      fast: [["Ikuti jadwal biasa. Belum ada bukti jendela puasa khusus untuk fase ini.", "belum"]],
+    },
+    luteal: {
+      level: 2,
+      ex: [["Latihan daya tahan (endurance) dilaporkan lebih baik di fase ini.", "terbatas"]],
+      food: [["Kebutuhan protein dilaporkan paling tinggi di pertengahan luteal.", "terbatas"],
+             ["Sertakan sumber magnesium, seperti kacang, biji-bijian, dan sayuran hijau.", "umum"]],
+      fast: [["Ikuti jadwal biasa. Studi time-restricted eating membahas hormon androgen, bukan panduan per fase.", "terbatas"]],
+    },
+  };
+  const LEVEL_TEXT = [
+    "Istirahat aktif: jalan santai atau peregangan 10–20 menit.",
+    "Gerak ringan: jalan, yoga, atau bersepeda santai 20–30 menit.",
+    "Intensitas sedang: jogging ringan, renang, atau latihan daya tahan 30–45 menit.",
+    "Latihan kekuatan atau interval.",
+  ];
+  const CHIP = { terbatas: "Terbatas", umum: "Umum", belum: "Belum ada bukti" };
+
+  // ---------- State ----------
+  const KEY = "ritmeku:v1";
+  let profile = null;            // { periods: [..], winOpen, winClose, trialStart }
+  const days = {};               // date -> data
+  const weeks = {};              // "w1" -> data
+  let draft = {};                // today's unsaved edits
+  let saveTimer = null;
+
+  // ---------- Cycle logic ----------
+  function sortedPeriods() { return [...new Set((profile && profile.periods) || [])].sort(); }
+  function avgCycle() {
+    const p = sortedPeriods().slice(-4);
+    const gaps = [];
+    for (let i = 1; i < p.length; i++) { const g = diff(p[i], p[i - 1]); if (g >= 15 && g <= 60) gaps.push(g); }
+    if (!gaps.length) return { len: 28, from: 0 };
+    return { len: Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length), from: gaps.length };
+  }
+  function phaseOn(date) {
+    const p = sortedPeriods().filter((s) => s <= date);
+    if (!p.length) return null;
+    const start = p[p.length - 1];
+    const L = avgCycle().len;
+    const d = diff(date, start) + 1;
+    const ov = L - 14;
+    const log = date === today() ? Object.assign({}, days[date] || {}, draft) : days[date];
+    let key;
+    if (d <= 5 || (log && log.period === "ya" && d <= 8)) key = "menstruasi";
+    else if (d <= ov - 2) key = "folikular";
+    else if (d <= ov + 1) key = "ovulasi";
+    else key = "luteal";
+    return { key, day: d, len: L, late: Math.max(0, d - L) };
+  }
+
+  function todayLog() { return Object.assign({}, days[today()] || {}, draft); }
+  function isLogged(d) { return !!(days[d] && days[d].energy); }
+
+  // ---------- Rendering ----------
+  function chip(lbl) { return '<span class="chip ' + lbl + '">' + CHIP[lbl] + "</span>"; }
+  function lines(arr) { return arr.map(([t, l]) => "<p>" + esc(t) + " " + chip(l) + "</p>").join(""); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+  function render() {
+    const t = today();
+    const dt = new Date();
+    $("todayLabel").textContent = HARI[dt.getDay()] + ", " + human(t);
+    $("vLoading").hidden = true;
+    if (!profile) { $("vSetup").hidden = false; $("vApp").hidden = true; return; }
+    $("vSetup").hidden = true; $("vApp").hidden = false;
+
+    const ph = phaseOn(t);
+    const log = todayLog();
+    const card = $("phaseCard");
+    if (ph) {
+      card.style.setProperty("--phase-c", "var(" + PHASES[ph.key].color + ")");
+      $("phName").textContent = PHASES[ph.key].name;
+      $("phMeta").innerHTML = 'Hari ke-<span class="num">' + ph.day + '</span> dari siklus rata-rata <span class="num">' + ph.len + "</span> hari";
+      $("phLate").hidden = !ph.late;
+      $("phLate").textContent = ph.late ? "Haid belum ditandai " + ph.late + " hari setelah perkiraan. Tekan \"Haid mulai hari ini\" saat haid datang. Jika sering terlambat, konsultasikan ke tenaga kesehatan." : "";
+    } else {
+      card.style.setProperty("--phase-c", "var(--accent)");
+      $("phName").textContent = "Belum diketahui";
+      $("phMeta").textContent = "Tanggal haid yang tersimpan semuanya setelah hari ini. Periksa pengaturan.";
+      $("phLate").hidden = true;
+    }
+    $("fastLine").textContent = fastingStatus();
+    const startedToday = sortedPeriods().includes(t);
+    $("startPeriodBtn").hidden = startedToday;
+
+    // Log buttons
+    setPressed("segEnergy", log.energy ? String(log.energy) : null);
+    setPressed("segPeriod", log.period || null);
+    setPressed("segFast", log.fasting || null);
+    $("askStart").hidden = !(log.period === "ya" && ph && ph.key !== "menstruasi" && !startedToday);
+
+    renderRec(ph, log);
+    renderTrial();
+    renderSettings();
+  }
+
+  function setPressed(groupId, val) {
+    $(groupId).querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.v === val)));
+  }
+
+  function fastingStatus() {
+    const o = profile.winOpen || "12:00", c = profile.winClose || "20:00";
+    const now = new Date(); const m = now.getHours() * 60 + now.getMinutes();
+    const toM = (s) => { const [h, mm] = s.split(":").map(Number); return h * 60 + mm; };
+    const om = toM(o), cm = toM(c);
+    const inWin = om <= cm ? (m >= om && m < cm) : (m >= om || m < cm);
+    return inWin ? "Jendela makan buka sampai " + c + "." : "Waktu puasa. Jendela makan buka pukul " + o + ".";
+  }
+
+  function renderRec(ph, log) {
+    if (!ph) { $("rec").innerHTML = '<p class="muted">Rekomendasi muncul setelah tanggal haid terakhir diisi.</p>'; $("lowBanner").hidden = true; return; }
+    const kb = KB[ph.key];
+    const low = log.energy && log.energy <= 2;
+    $("lowBanner").hidden = !low;
+    let ex;
+    if (low) {
+      const lvl = Math.max(0, kb.level - 1);
+      ex = lines([[LEVEL_TEXT[lvl], "umum"]]) + '<p class="small muted">Saran fase ini sebelumnya: ' + esc(kb.ex[0][0]) + "</p>";
+    } else {
+      ex = lines(kb.ex);
+    }
+    const fast = low
+      ? lines([["Tidak perlu memaksakan puasa hari ini. Longgarkan jendela makan dan makan saat lapar.", "umum"]])
+      : lines(kb.fast);
+    const noEnergy = !log.energy ? '<p class="small muted">Isi energi di atas agar rekomendasi menyesuaikan kondisimu hari ini.</p>' : "";
+    $("rec").innerHTML =
+      '<div class="rec-item"><div class="k">Olahraga</div><div class="v">' + ex + "</div></div>" +
+      '<div class="rec-item"><div class="k">Nutrisi</div><div class="v">' + lines(kb.food) + "</div></div>" +
+      '<div class="rec-item"><div class="k">Jendela makan</div><div class="v">' + fast + "</div></div>" + noEnergy;
+  }
+
+  function renderTrial() {
+    const t = today();
+    const start = profile.trialStart || t;
+    const elapsed = Math.min(28, Math.max(1, diff(t, start) + 1));
+    let logged = 0, missed = 0;
+    for (let i = 0; i < 28; i++) {
+      const d = addDays(start, i);
+      if (isLogged(d)) logged++;
+      else if (d < t) missed++;
+    }
+    $("stLogged").textContent = logged;
+    $("stMissed").textContent = missed;
+    $("stMissBox").classList.toggle("warn", missed > 4);
+    $("stBar").style.width = Math.round((logged / 28) * 100) + "%";
+    const done = Math.min(4, Math.floor(diff(t, start) / 7));
+    let fit = 0, answered = 0, pending = null;
+    for (let w = 1; w <= 4; w++) {
+      const a = weeks["w" + w];
+      if (a) { answered++; if (a.fit) fit++; }
+      else if (w <= done && !pending) pending = w;
+    }
+    $("stWeeks").textContent = fit + "/" + answered;
+    const finished = diff(t, start) >= 28;
+    let note = "Trial dimulai " + human(start) + ". Hari ke-" + elapsed + " dari 28.";
+    if (finished) note = "Trial 28 hari selesai (" + human(start) + " – " + human(addDays(start, 27)) + "). " +
+      (missed > 4 ? "Lebih dari 4 hari terlewat: input mungkin perlu dibuat lebih singkat." : "Kebiasaan mencatat tercapai.") + " " +
+      (answered >= 4 ? (fit >= 3 ? "Rekomendasi sesuai di " + fit + " dari 4 minggu." : "Rekomendasi sesuai kurang dari 3 dari 4 minggu: rekomendasi per fase perlu diubah.") : "");
+    else if (missed > 4) note += " Sudah lebih dari 4 hari terlewat.";
+    $("stNote").textContent = note;
+
+    // Weekly check
+    $("weekCard").hidden = !pending;
+    if (pending) {
+      $("weekQ").textContent = "Minggu ke-" + pending + " (" + human(addDays(start, (pending - 1) * 7)) + " – " + human(addDays(start, pending * 7 - 1)) + "): apakah rekomendasi minggu ini terasa sesuai dengan kondisimu?";
+      $("weekCard").dataset.week = pending;
+    }
+
+    // Strip: 21 days back, today, 6 ahead
+    const cells = [];
+    for (let i = -21; i <= 6; i++) {
+      const d = addDays(t, i);
+      const ph = phaseOn(d);
+      const cls = ["cell"]; if (i > 0) cls.push("future"); if (i === 0) cls.push("today");
+      const bg = ph ? "var(" + PHASES[ph.key].color + ")" : "var(--ph-none)";
+      const title = human(d) + (ph ? " · " + PHASES[ph.key].name : "") + (isLogged(d) ? " · tercatat" : "");
+      cells.push('<div class="' + cls.join(" ") + '" style="background:' + bg + '" title="' + esc(title) + '">' + (isLogged(d) ? '<span class="dot"></span>' : "") + "</div>");
+    }
+    $("strip").innerHTML = cells.join("");
+  }
+
+  function renderSettings() {
+    const a = avgCycle();
+    $("setAvg").textContent = a.len + " hari" + (a.from ? "" : " (bawaan)");
+    const p = sortedPeriods().reverse();
+    $("plist").innerHTML = p.map((s) => '<li><span>' + human(s) + '</span><button class="linkbtn" type="button" data-del="' + s + '">Hapus</button></li>').join("");
+    if (document.activeElement !== $("sw1")) $("sw1").value = profile.winOpen || "12:00";
+    if (document.activeElement !== $("sw2")) $("sw2").value = profile.winClose || "20:00";
+  }
+
+  // ---------- Writes ----------
+  function persist() {
+    try {
+      localStorage.setItem(KEY, JSON.stringify({ profile, days, weeks }));
+      return true;
+    } catch (e) {
+      showSaved("Gagal menyimpan: penyimpanan browser penuh atau diblokir.", false);
+      return false;
+    }
+  }
+  function showSaved(msg, ok) { const el = $("savedMsg"); el.textContent = msg; el.classList.toggle("ok", !!ok); }
+
+  function saveProfile(next) {
+    profile = next; persist(); render();
+  }
+
+  function scheduleDaySave() {
+    showSaved("Menyimpan…");
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      const d = today();
+      const body = Object.assign({}, days[d] || {}, draft, { date: d, updatedAt: new Date().toISOString() });
+      const ph = phaseOn(d); if (ph) { body.phase = ph.key; body.cycleDay = ph.day; }
+      draft = {};
+      days[d] = body;
+      if (persist()) showSaved("Tersimpan " + new Date().toTimeString().slice(0, 5) + ".", true);
+      render();
+    }, 700);
+  }
+
+  function bindSeg(id, field, cast) {
+    $(id).addEventListener("click", (e) => {
+      const b = e.target.closest("button"); if (!b || !profile) return;
+      draft[field] = cast ? cast(b.dataset.v) : b.dataset.v;
+      render(); scheduleDaySave();
+    });
+  }
+  bindSeg("segEnergy", "energy", Number);
+  bindSeg("segPeriod", "period");
+  bindSeg("segFast", "fasting");
+
+  function markPeriodStart() {
+    const t = today();
+    draft.period = "ya";
+    const next = Object.assign({}, profile, { periods: sortedPeriods().concat(t) });
+    saveProfile(next);
+    scheduleDaySave();
+  }
+  $("startPeriodBtn").addEventListener("click", markPeriodStart);
+  $("askStartYes").addEventListener("click", markPeriodStart);
+
+  function answerWeek(fit) {
+    const w = Number($("weekCard").dataset.week); if (!w) return;
+    const data = { week: w, fit, note: $("weekNote").value.trim(), answeredAt: new Date().toISOString() };
+    weeks["w" + w] = data;
+    $("weekNote").value = "";
+    persist();
+    render();
+  }
+  $("weekYes").addEventListener("click", () => answerWeek(true));
+  $("weekNo").addEventListener("click", () => answerWeek(false));
+
+  $("vSetup").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const t = today();
+    const ds = ["p1", "p2", "p3"].map((id) => $(id).value).filter(Boolean);
+    const err = $("setupErr");
+    if (!$("p1").value) { err.hidden = false; err.textContent = "Isi hari pertama haid terakhir dulu."; return; }
+    if (ds.some((d) => d > t)) { err.hidden = false; err.textContent = "Tanggal haid tidak boleh setelah hari ini."; return; }
+    err.hidden = true;
+    saveProfile({ periods: [...new Set(ds)].sort(), winOpen: $("w1").value || "12:00", winClose: $("w2").value || "20:00", trialStart: t, createdAt: new Date().toISOString() });
+  });
+
+  $("plist").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-del]"); if (!b) return;
+    const rest = sortedPeriods().filter((s) => s !== b.dataset.del);
+    if (!rest.length) { $("setMsg").textContent = "Minimal satu tanggal haid harus tersimpan."; return; }
+    saveProfile(Object.assign({}, profile, { periods: rest }));
+    $("setMsg").textContent = "Tanggal dihapus.";
+  });
+  $("addPBtn").addEventListener("click", () => {
+    const v = $("addP").value;
+    if (!v) { $("setMsg").textContent = "Pilih tanggal dulu."; return; }
+    if (v > today()) { $("setMsg").textContent = "Tanggal tidak boleh setelah hari ini."; return; }
+    saveProfile(Object.assign({}, profile, { periods: sortedPeriods().concat(v) }));
+    $("addP").value = ""; $("setMsg").textContent = "Tanggal ditambahkan.";
+  });
+  $("saveWinBtn").addEventListener("click", () => {
+    saveProfile(Object.assign({}, profile, { winOpen: $("sw1").value || "12:00", winClose: $("sw2").value || "20:00" }));
+    $("setMsg").textContent = "Jadwal puasa disimpan.";
+  });
+
+  // Refresh fasting status and the date each minute (render only, no writes).
+  setInterval(() => { if (profile) render(); }, 60000);
+
+  // ---------- Boot ----------
+  function boot() {
+    let saved = null;
+    try {
+      localStorage.setItem(KEY + ":test", "1");
+      localStorage.removeItem(KEY + ":test");
+      saved = JSON.parse(localStorage.getItem(KEY) || "null");
+    } catch (e) {
+      $("todayLabel").textContent = human(today());
+      $("vLoading").hidden = true; $("vOff").hidden = false; return;
+    }
+    if (saved) {
+      profile = saved.profile || null;
+      Object.assign(days, saved.days || {});
+      Object.assign(weeks, saved.weeks || {});
+    }
+    render();
+  }
+  boot();
+})();
+</script>
+
+</body>
+</html>
